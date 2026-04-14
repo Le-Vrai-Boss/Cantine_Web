@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="fr" class="theme-default">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion des Cantines Scolaires</title>
+    
+    <meta name="theme-color" content="#3b82f6">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root, .theme-default {
+        --color-primary-hue: 221;
+        --color-primary-saturation: 83%;
+        --color-primary-lightness: 53%;
+        
+        --color-primary: hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness)); /* blue-600 */
+        --color-primary-hover: hsl(var(--color-primary-hue) var(--color-primary-saturation) 47%); /* blue-700 */
+        --color-primary-light: hsl(var(--color-primary-hue) 90% 90%); /* blue-100 */
+        --color-primary-dark: hsl(var(--color-primary-hue) 70% 40%); /* blue-700 text */
+        
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-danger: #ef4444;
+        
+        --color-text-base: #1e293b; /* slate-800 */
+        --color-text-muted: #64748b; /* slate-500 */
+        --color-text-inverted: #ffffff;
+        --color-text-heading: #0f172a; /* slate-900 */
+        
+        --color-bg-base: #f1f5f9; /* slate-100 */
+        --color-bg-muted: #f8fafc; /* slate-50 */
+        --color-bg-card: #ffffff;
+        --color-bg-header: rgba(255, 255, 255, 0.95);
+        --color-bg-sidebar: #0f172a; /* slate-900 */
+        
+        --color-sidebar-text: #d1d5db; /* slate-300 */
+        --color-sidebar-text-active: #ffffff;
+        --color-sidebar-icon: #94a3b8; /* slate-400 */
+        --color-sidebar-icon-active: #93c5fd; /* blue-300 */
+        --color-sidebar-bg-active: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+        --color-sidebar-bg-hover: rgba(100, 116, 139, 0.5); /* slate-500/50 */
+        --color-sidebar-border: rgba(51, 65, 85, 0.5); /* slate-700/50 */
+
+        --color-border-base: #e2e8f0; /* slate-200 */
+        --color-border-input: #cbd5e1; /* slate-300 */
+        
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+        --color-chart-1: #3b82f6;
+        --color-chart-2: #14b8a6;
+        --color-chart-3: #f97316;
+        --color-chart-4: #8b5cf6;
+        --color-chart-5: #ec4899;
+      }
+      .theme-forest {
+        --color-primary-hue: 145;
+        --color-primary-saturation: 63%;
+        --color-primary-lightness: 42%;
+        --color-bg-base: #f0fdf4; /* green-50 */
+        --color-bg-muted: #f0fdf4;
+        --color-bg-sidebar: #142517;
+        --color-sidebar-icon-active: #86efac; /* green-300 */
+        --color-sidebar-bg-active: rgba(34, 197, 94, 0.2);
+      }
+      .theme-ocean {
+        --color-primary-hue: 174;
+        --color-primary-saturation: 84%;
+        --color-primary-lightness: 35%;
+        --color-bg-base: #ecfeff; /* cyan-50 */
+        --color-bg-muted: #ecfeff;
+        --color-bg-sidebar: #0e3333;
+        --color-sidebar-icon-active: #67e8f9; /* cyan-300 */
+        --color-sidebar-bg-active: rgba(6, 182, 212, 0.2);
+      }
+      .theme-sunset {
+        --color-primary-hue: 25;
+        --color-primary-saturation: 95%;
+        --color-primary-lightness: 51%;
+        --color-bg-base: #fffbeb; /* amber-50 */
+        --color-bg-muted: #fffbeb;
+        --color-bg-sidebar: #441c00;
+        --color-sidebar-icon-active: #fdba74; /* orange-300 */
+        --color-sidebar-bg-active: rgba(249, 115, 22, 0.2);
+      }
+      .theme-dark {
+        --color-primary: #3b82f6; /* blue-500 */
+        --color-primary-hover: #2563eb; /* blue-600 */
+        --color-primary-light: rgba(59, 130, 246, 0.15); /* blue-500/15 */
+        --color-primary-dark: #dbeafe; /* blue-100 */
+
+        --color-text-base: #e2e8f0; /* slate-200 */
+        --color-text-muted: #94a3b8; /* slate-400 */
+        --color-text-inverted: #0f172a;
+        --color-text-heading: #f8fafc; /* slate-50 */
+
+        --color-bg-base: #0f172a; /* slate-900 */
+        --color-bg-muted: #0f172a;
+        --color-bg-card: #1e293b; /* slate-800 */
+        --color-bg-header: rgba(30, 41, 59, 0.85);
+        --color-bg-sidebar: #020617; /* slate-950 */
+
+        --color-sidebar-text: #94a3b8;
+        --color-sidebar-text-active: #f8fafc;
+        --color-sidebar-icon: #64748b;
+        --color-sidebar-icon-active: #60a5fa; /* blue-400 */
+        --color-sidebar-bg-active: rgba(59, 130, 246, 0.15);
+        --color-sidebar-bg-hover: rgba(100, 116, 139, 0.2);
+        --color-sidebar-border: rgba(71, 85, 105, 0.5); /* slate-600/50 */
+
+        --color-border-base: #334155; /* slate-700 */
+        --color-border-input: #475569; /* slate-600 */
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+
+        --color-chart-1: #3b82f6;
+        --color-chart-2: #2dd4bf;
+        --color-chart-3: #fb923c;
+        --color-chart-4: #a78bfa;
+        --color-chart-5: #f472b6;
+      }
+      
+      body {
+        background-color: var(--color-bg-base);
+        color: var(--color-text-base);
+      }
+      /* For custom scrollbars to match the theme */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--color-bg-base);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      /* Recharts Dark Theme adjustments */
+      .theme-dark .recharts-text, .theme-dark .recharts-legend-item-text {
+        fill: var(--color-text-muted) !important;
+      }
+      .theme-dark .recharts-cartesian-axis-line, .theme-dark .recharts-cartesian-grid-horizontal line, .theme-dark .recharts-cartesian-grid-vertical line {
+        stroke: var(--color-border-base) !important;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "xlsx": "https://aistudiocdn.com/xlsx@^0.18.5",
+    "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
+    "qrcode": "https://aistudiocdn.com/qrcode@^1.5.4",
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
+    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^5.0.2",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0",
+    "jsqr": "https://aistudiocdn.com/jsqr@^1.4.0",
+    "vite": "https://aistudiocdn.com/vite@^7.1.12",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
+    "@capacitor/cli": "https://aistudiocdn.com/@capacitor/cli@^7.4.4"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-100">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

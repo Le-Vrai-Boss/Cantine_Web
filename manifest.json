@@ -1,0 +1,23 @@
+{
+  "short_name": "CantinePRO",
+  "name": "Gestion des Cantines Scolaires",
+  "description": "Une application web pour centraliser et organiser toutes les informations relatives aux cantines scolaires.",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/index.html",
+  "display_override": ["standalone"],
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#3b82f6",
+  "background_color": "#f1f5f9"
+}

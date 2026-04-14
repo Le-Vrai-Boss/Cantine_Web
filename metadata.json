@@ -1,0 +1,8 @@
+{
+  "name": "CANTINE Web2",
+  "description": "Une application web pour centraliser et organiser toutes les informations relatives aux cantines scolaires, y compris les informations administratives, la gestion des denrées, le suivi des dépenses, la planification et les rapports.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}
