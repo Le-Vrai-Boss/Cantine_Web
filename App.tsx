@@ -411,12 +411,19 @@ const App: React.FC = () => {
     }
 
     if (activationStatus === 'expired') {
-        return <DeactivatedScreen onActivateClick={() => {
-            setActiveMainMenu(MainMenuId.Parametres);
-            setActiveSubMenu(null);
-            // Temporarily set a valid status to allow access to settings page
-            setActivationStatus('trial'); 
-        }} />;
+        return <DeactivatedScreen 
+            onActivateClick={() => {
+                setActiveMainMenu(MainMenuId.Parametres);
+                setActiveSubMenu(null);
+                setActivationStatus('trial'); 
+            }}
+            onDesignerUnlock={() => {
+                handleUnlock(0);
+                setActivationStatus('trial'); // Temporarily re-enable to allow access
+                setActiveMainMenu(MainMenuId.Parametres);
+                setActiveSubMenu(null);
+            }}
+        />;
     }
 
     return (

@@ -6,9 +6,10 @@ import { License } from '../types';
 
 interface DeactivatedScreenProps {
     onActivateClick?: () => void;
+    onDesignerUnlock?: () => void;
 }
 
-export const DeactivatedScreen: React.FC<DeactivatedScreenProps> = () => {
+export const DeactivatedScreen: React.FC<DeactivatedScreenProps> = ({ onDesignerUnlock }) => {
     const { licenses, setLicenses, setAppSettings, logAction } = useAppContext();
     const [activationCode, setActivationCode] = useState('');
     const [error, setError] = useState('');
@@ -31,6 +32,15 @@ export const DeactivatedScreen: React.FC<DeactivatedScreenProps> = () => {
         };
         getIp();
     }, []);
+
+    const handleDesignerBypass = () => {
+        const pwd = window.prompt("Code d'accès concepteur :");
+        if (pwd === "TheBrain2010") {
+            if (onDesignerUnlock) onDesignerUnlock();
+        } else if (pwd !== null) {
+            alert("Code incorrect.");
+        }
+    };
 
     const handleActivate = () => {
         const license = licenses.find((l: License) => l.code === activationCode.trim().toUpperCase());
@@ -117,6 +127,13 @@ export const DeactivatedScreen: React.FC<DeactivatedScreenProps> = () => {
                     <p className="mt-6 text-xs text-slate-400">
                         Contactez votre administrateur pour obtenir un code d'activation pour cet appareil.
                     </p>
+                    
+                    {/* Bouton discret pour le concepteur */}
+                    <div 
+                        onClick={handleDesignerBypass}
+                        className="absolute bottom-2 right-2 w-4 h-4 cursor-default opacity-0 hover:opacity-10 transition-opacity"
+                        title="Admin Bypass"
+                    />
                 </div>
             </div>
         </div>
