@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { AppSettings, QRCodeChunk } from '../types';
 import { Button } from '../components/Button';
-import { SaveIcon, EyeIcon, EyeOffIcon, ImportIcon, QrCodeIcon, CameraIcon, AlertTriangleIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon } from '../components/Icons';
+import { SaveIcon, EyeIcon, EyeOffIcon, ImportIcon, QrCodeIcon, CameraIcon, AlertTriangleIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, RefreshIcon } from '../components/Icons';
 import { MainMenuId, SubMenuId } from '../constants';
 import { useToast } from '../context/ToastContext';
 import { QRScanner } from '../components/QRScanner';
@@ -274,9 +274,20 @@ const LicenseSettings: React.FC<{
     currentUserLevel: number | null;
 }> = ({ setAppSettings, logAction, currentUserLevel }) => {
     const { licenses, setLicenses, addToast } = useAppContext();
-    const [selectedDuration, setSelectedDuration] = useState<'6m' | '9m' | '1y' | '2y' | 'unlimited'>('6m');
+    const [newLicenseDuration, setNewLicenseDuration] = useState<'6m' | '9m' | '1y' | '2y' | 'unlimited'>('6m');
+    const [newLicenseCode, setNewLicenseCode] = useState('');
     const [currentDeviceIp, setCurrentDeviceIp] = useState('Chargement...');
     const [activationCodeInput, setActivationCodeInput] = useState('');
+
+    useEffect(() => {
+        if (!newLicenseCode) {
+            generateRandomCode();
+        }
+    }, []);
+
+    const generateRandomCode = () => {
+        setNewLicenseCode(Math.random().toString(36).substr(2, 10).toUpperCase());
+    };
 
     useEffect(() => {
         const getIp = async () => {
@@ -296,18 +307,23 @@ const LicenseSettings: React.FC<{
         getIp();
     }, []);
 
-    const generateLicense = () => {
-        const newCode = Math.random().toString(36).substr(2, 10).toUpperCase();
+    const addLicense = () => {
+        if (!newLicenseCode.trim()) {
+            addToast("Veuillez entrer un code de licence.", "error");
+            return;
+        }
+        
         const newLicense: License = {
             id: Date.now().toString(),
-            code: newCode,
+            code: newLicenseCode.trim().toUpperCase(),
             deviceIp: 'En attente...',
-            duration: selectedDuration,
+            duration: newLicenseDuration,
             status: 'pending'
         };
         setLicenses([...licenses, newLicense]);
-        addToast(`Nouveau code de licence généré : ${newCode}`, 'success');
-        logAction(`Nouveau code de licence généré (${selectedDuration}).`, currentUserLevel);
+        addToast(`Nouveau code de licence ajouté : ${newLicense.code}`, 'success');
+        logAction(`Nouveau code de licence ajouté (${newLicenseDuration}).`, currentUserLevel);
+        generateRandomCode(); // Reset for next add
     };
 
     const handleActivateCurrentDevice = () => {
@@ -379,43 +395,81 @@ const LicenseSettings: React.FC<{
         addToast("Durée de la licence mise à jour.", "success");
     };
 
+    const updateLicenseCode = (id: string, newCode: string) => {
+        setLicenses(licenses.map((l: License) => 
+            l.id === id ? { ...l, code: newCode.toUpperCase() } : l
+        ));
+    };
+
     return (
         <div className="space-y-6">
             <div className="bg-[var(--color-bg-card)] p-6 rounded-lg [box-shadow:var(--shadow-md)]">
                 <h3 className="text-xl font-bold text-[var(--color-text-heading)] mb-4 border-b border-[var(--color-border-base)] pb-2">Licence et Activation</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <div className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-md">
-                            <p className="text-sm text-blue-800 font-medium">Votre Appareil : <span className="font-mono">{currentDeviceIp}</span></p>
-                            <p className="text-xs text-blue-600 mt-1">Cet identifiant est unique à votre appareil et nécessaire pour l'activation.</p>
-                        </div>
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-md">
+                        <p className="text-sm text-blue-800 font-medium">Votre Appareil : <span className="font-mono">{currentDeviceIp}</span></p>
+                        <p className="text-xs text-blue-600 mt-1">Cet identifiant est unique à votre appareil et nécessaire pour l'activation.</p>
+                    </div>
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-[var(--color-text-muted)]">Activer cet appareil</label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    placeholder="Entrez votre code d'activation"
-                                    value={activationCodeInput}
-                                    onChange={(e) => setActivationCodeInput(e.target.value)}
-                                    className="flex-grow p-2 border rounded-md uppercase font-mono"
-                                />
-                                <Button onClick={handleActivateCurrentDevice} disabled={!activationCodeInput}>Activer</Button>
-                            </div>
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Activer cet appareil</label>
+                        <div className="flex gap-2 max-w-md">
+                            <input 
+                                type="text" 
+                                placeholder="Entrez votre code d'activation"
+                                value={activationCodeInput}
+                                onChange={(e) => setActivationCodeInput(e.target.value)}
+                                className="flex-grow p-2 border rounded-md uppercase font-mono"
+                            />
+                            <Button onClick={handleActivateCurrentDevice} disabled={!activationCodeInput}>Activer</Button>
                         </div>
                     </div>
 
                     {currentUserLevel === 0 && (
-                        <div className="space-y-4">
-                            <h4 className="font-semibold text-[var(--color-text-base)]">Générer une nouvelle licence</h4>
-                            <div className="flex items-end gap-3">
-                                <div className="flex-grow">
-                                    <label className="block text-sm font-medium text-[var(--color-text-muted)]">Durée de validité</label>
+                        <div className="pt-6 border-t border-[var(--color-border-base)]">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-[var(--color-text-heading)] flex items-center gap-2">
+                                    <PlusCircleIcon className="h-5 w-5 text-[var(--color-primary)]" />
+                                    Ajouter une nouvelle licence
+                                </h4>
+                                <span className="text-[10px] bg-[var(--color-primary-light)] text-[var(--color-primary-dark)] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Mode Concepteur</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50 p-5 rounded-xl border-2 border-slate-200 shadow-inner">
+                                <div className="lg:col-span-1">
+                                    <label className="block text-[10px] uppercase font-bold text-blue-600 mb-1.5 ml-1">Zone 1 : IP Appareil</label>
+                                    <div className="h-[42px] flex items-center px-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-400 italic font-medium">
+                                        En attente...
+                                    </div>
+                                </div>
+                                
+                                <div className="lg:col-span-1">
+                                    <label className="block text-[10px] uppercase font-bold text-emerald-600 mb-1.5 ml-1">Zone 2 : Code de déverrouillage</label>
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            value={newLicenseCode}
+                                            onChange={(e) => setNewLicenseCode(e.target.value)}
+                                            className="w-full h-[42px] pl-3 pr-10 bg-emerald-50 border border-emerald-200 rounded-lg uppercase font-mono text-sm text-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="CODE-AUTO"
+                                        />
+                                        <button 
+                                            onClick={generateRandomCode}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"
+                                            title="Régénérer un code"
+                                        >
+                                            <RefreshIcon className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="lg:col-span-1">
+                                    <label className="block text-[10px] uppercase font-bold text-amber-600 mb-1.5 ml-1">Zone 3 : Durée</label>
                                     <select 
-                                        value={selectedDuration} 
-                                        onChange={e => setSelectedDuration(e.target.value as License['duration'])}
-                                        className="mt-1 block w-full px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-input)] rounded-md"
+                                        value={newLicenseDuration} 
+                                        onChange={e => setNewLicenseDuration(e.target.value as License['duration'])}
+                                        className="w-full h-[42px] px-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="6m">6 Mois</option>
                                         <option value="9m">9 Mois</option>
@@ -424,7 +478,24 @@ const LicenseSettings: React.FC<{
                                         <option value="unlimited">Illimitée</option>
                                     </select>
                                 </div>
-                                <Button onClick={generateLicense} variant="primary">Générer Code</Button>
+                                
+                                <div className="lg:col-span-1">
+                                    <label className="block text-[10px] uppercase font-bold text-purple-600 mb-1.5 ml-1">Zone 4 : Expiration</label>
+                                    <div className="h-[42px] flex items-center px-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-400 italic font-medium">
+                                        Calculée à l'activation
+                                    </div>
+                                </div>
+                                
+                                <div className="lg:col-span-1 flex items-end">
+                                    <Button 
+                                        onClick={addLicense} 
+                                        variant="primary" 
+                                        className="w-full h-[42px] shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                                        icon={<PlusIcon className="h-4 w-4" />}
+                                    >
+                                        Ajouter
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -455,7 +526,14 @@ const LicenseSettings: React.FC<{
                                     licenses.map((license: License) => (
                                         <tr key={license.id} className="border-b border-[var(--color-border-base)] hover:bg-[var(--color-bg-muted)] transition-colors">
                                             <td className="py-3 px-4 font-mono text-sm">{license.deviceIp}</td>
-                                            <td className="py-3 px-4 font-bold text-[var(--color-primary)]">{license.code}</td>
+                                            <td className="py-3 px-4">
+                                                <input 
+                                                    type="text" 
+                                                    value={license.code}
+                                                    onChange={(e) => updateLicenseCode(license.id, e.target.value)}
+                                                    className="font-bold text-[var(--color-primary)] bg-transparent border-none focus:ring-0 p-0 w-full uppercase font-mono"
+                                                />
+                                            </td>
                                             <td className="py-3 px-4">
                                                 <select 
                                                     value={license.duration}
