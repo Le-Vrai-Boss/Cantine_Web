@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { AppSettings, QRCodeChunk } from '../types';
 import { Button } from '../components/Button';
-import { SaveIcon, EyeIcon, EyeOffIcon, ImportIcon, QrCodeIcon, CameraIcon, AlertTriangleIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, RefreshIcon } from '../components/Icons';
+import { SaveIcon, EyeIcon, EyeOffIcon, ImportIcon, QrCodeIcon, CameraIcon, AlertTriangleIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, RefreshIcon, PlusCircleIcon, PlusIcon, EditIcon, ClipboardListIcon } from '../components/Icons';
 import { MainMenuId, SubMenuId } from '../constants';
 import { useToast } from '../context/ToastContext';
 import { QRScanner } from '../components/QRScanner';
@@ -272,22 +272,27 @@ const LicenseSettings: React.FC<{
     setAppSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
     logAction: (action: string, userLevel: number | null) => void;
     currentUserLevel: number | null;
-}> = ({ setAppSettings, logAction, currentUserLevel }) => {
+}> = ({ appSettings, setAppSettings, logAction, currentUserLevel }) => {
     const { licenses, setLicenses, addToast } = useAppContext();
     const [newLicenseDuration, setNewLicenseDuration] = useState<'6m' | '9m' | '1y' | '2y' | 'unlimited'>('6m');
     const [newLicenseCode, setNewLicenseCode] = useState('');
     const [currentDeviceIp, setCurrentDeviceIp] = useState('Chargement...');
     const [activationCodeInput, setActivationCodeInput] = useState('');
 
+    const generateRandomCode = useCallback(() => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setNewLicenseCode(code);
+    }, []);
+
     useEffect(() => {
         if (!newLicenseCode) {
             generateRandomCode();
         }
-    }, []);
-
-    const generateRandomCode = () => {
-        setNewLicenseCode(Math.random().toString(36).substr(2, 10).toUpperCase());
-    };
+    }, [newLicenseCode, generateRandomCode]);
 
     useEffect(() => {
         const getIp = async () => {
@@ -320,10 +325,10 @@ const LicenseSettings: React.FC<{
             duration: newLicenseDuration,
             status: 'pending'
         };
-        setLicenses([...licenses, newLicense]);
+        setLicenses(prev => [...prev, newLicense]);
         addToast(`Nouveau code de licence ajouté : ${newLicense.code}`, 'success');
         logAction(`Nouveau code de licence ajouté (${newLicenseDuration}).`, currentUserLevel);
-        generateRandomCode(); // Reset for next add
+        generateRandomCode();
     };
 
     const handleActivateCurrentDevice = () => {
@@ -370,13 +375,13 @@ const LicenseSettings: React.FC<{
 
     const handleDeleteLicense = (id: string) => {
         if (window.confirm("Supprimer cette licence ?")) {
-            setLicenses(licenses.filter((l: License) => l.id !== id));
+            setLicenses(prev => prev.filter((l: License) => l.id !== id));
             addToast("Licence supprimée.", "info");
         }
     };
 
     const updateLicenseDuration = (id: string, newDuration: License['duration']) => {
-        setLicenses(licenses.map((l: License) => {
+        setLicenses(prev => prev.map((l: License) => {
             if (l.id === id) {
                 let expiryDate: Date | null = l.activationDate ? new Date(l.activationDate) : null;
                 if (expiryDate) {
@@ -396,179 +401,238 @@ const LicenseSettings: React.FC<{
     };
 
     const updateLicenseCode = (id: string, newCode: string) => {
-        setLicenses(licenses.map((l: License) => 
+        setLicenses(prev => prev.map((l: License) => 
             l.id === id ? { ...l, code: newCode.toUpperCase() } : l
         ));
+    };
+
+    const handleActivateUnlimited = () => {
+        setAppSettings(prev => ({
+            ...prev,
+            activationStatus: 'unlimited',
+            activationDate: new Date().toISOString()
+        }));
+        addToast("Application déverrouillée en mode ILLIMITÉ par le Concepteur.", "success");
+        logAction("Application passée en mode ILLIMITÉ par le Concepteur.", currentUserLevel);
+    };
+
+    const getStatusMessage = () => {
+        if (appSettings.activationStatus === 'activated' || appSettings.activationStatus === 'unlimited') {
+            return "Statut actuel : Activé.";
+        }
+        if (appSettings.activationStatus === 'expired') {
+            return "Statut actuel : Expiré.";
+        }
+        
+        // Trial calculation (7 days)
+        const start = new Date(appSettings.firstLaunchDate || new Date().toISOString());
+        const now = new Date();
+        const diff = now.getTime() - start.getTime();
+        const daysUsed = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.max(0, 7 - daysUsed);
+        
+        return `Statut actuel : Période d'essai. ${daysLeft} jours restants.`;
     };
 
     return (
         <div className="space-y-6">
             <div className="bg-[var(--color-bg-card)] p-6 rounded-lg [box-shadow:var(--shadow-md)]">
-                <h3 className="text-xl font-bold text-[var(--color-text-heading)] mb-4 border-b border-[var(--color-border-base)] pb-2">Licence et Activation</h3>
+                <h3 className="text-xl font-bold text-[var(--color-text-heading)] mb-6 border-b border-[var(--color-border-base)] pb-2 flex items-center justify-between">
+                    <span>Licence et Activation</span>
+                    {(currentUserLevel === 0 || currentUserLevel === 1) && appSettings.activationStatus !== 'unlimited' && (
+                        <Button 
+                            onClick={handleActivateUnlimited} 
+                            variant="primary" 
+                            className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-4 h-8"
+                        >
+                            Libérer l'application (Illimité)
+                        </Button>
+                    )}
+                </h3>
                 
-                <div className="grid grid-cols-1 gap-6">
-                    <div className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-md">
-                        <p className="text-sm text-blue-800 font-medium">Votre Appareil : <span className="font-mono">{currentDeviceIp}</span></p>
-                        <p className="text-xs text-blue-600 mt-1">Cet identifiant est unique à votre appareil et nécessaire pour l'activation.</p>
+                <div className="space-y-6">
+                    <div>
+                        <p className="text-sm font-medium text-[var(--color-text-base)]">
+                            {getStatusMessage()}
+                        </p>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Activer cet appareil</label>
-                        <div className="flex gap-2 max-w-md">
+                    <div className="space-y-3">
+                        <label className="block text-sm font-medium text-[var(--color-text-muted)]">Code d'activation</label>
+                        <div className="flex flex-col md:flex-row gap-4 items-center">
                             <input 
                                 type="text" 
-                                placeholder="Entrez votre code d'activation"
+                                placeholder="Entrez votre code ici"
                                 value={activationCodeInput}
                                 onChange={(e) => setActivationCodeInput(e.target.value)}
-                                className="flex-grow p-2 border rounded-md uppercase font-mono"
+                                className="flex-grow h-12 px-4 border border-[var(--color-border-input)] rounded-lg uppercase font-mono shadow-inner focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
                             />
-                            <Button onClick={handleActivateCurrentDevice} disabled={!activationCodeInput}>Activer</Button>
+                            <Button 
+                                onClick={handleActivateCurrentDevice} 
+                                disabled={!activationCodeInput} 
+                                variant="primary" 
+                                className="h-12 px-10 shadow-md whitespace-nowrap bg-[var(--color-primary-light)] text-[var(--color-primary-dark)] hover:bg-[var(--color-primary)] hover:text-white transition-all font-semibold"
+                            >
+                                Valider le code
+                            </Button>
                         </div>
                     </div>
 
-                    {currentUserLevel === 0 && (
-                        <div className="pt-6 border-t border-[var(--color-border-base)]">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="font-bold text-[var(--color-text-heading)] flex items-center gap-2">
-                                    <PlusCircleIcon className="h-5 w-5 text-[var(--color-primary)]" />
-                                    Ajouter une nouvelle licence
-                                </h4>
-                                <span className="text-[10px] bg-[var(--color-primary-light)] text-[var(--color-primary-dark)] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Mode Concepteur</span>
-                            </div>
+                    <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
+                        <p className="text-xs text-blue-800 flex items-center justify-between">
+                            <span className="font-semibold text-sm">ID de votre appareil :</span>
+                            <span className="font-mono bg-blue-100 px-3 py-1 rounded border border-blue-200 text-sm font-bold">{currentDeviceIp}</span>
+                        </p>
+                    </div>
+
+                    {(currentUserLevel === 0 || currentUserLevel === 1) && (
+                        <div className="pt-8 border-t border-[var(--color-border-base)]">
+                            <h4 className="font-bold text-lg text-[var(--color-text-heading)] mb-6 flex items-center gap-2">
+                                <PlusCircleIcon className="h-5 w-5 text-emerald-500" />
+                                Gestion Administrateur (4 Zones par ligne)
+                            </h4>
                             
-                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50 p-5 rounded-xl border-2 border-slate-200 shadow-inner">
-                                <div className="lg:col-span-1">
-                                    <label className="block text-[10px] uppercase font-bold text-blue-600 mb-1.5 ml-1">Zone 1 : IP Appareil</label>
-                                    <div className="h-[42px] flex items-center px-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-400 italic font-medium">
-                                        En attente...
+                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 items-end bg-emerald-50/30 p-5 rounded-xl border border-emerald-100 shadow-sm">
+                                <div>
+                                    <label className="block text-[10px] uppercase font-black text-slate-500 mb-2">Zone 1 : IP Appareil</label>
+                                    <div className="h-10 flex items-center px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-400 italic">
+                                        Libre à l'activation
                                     </div>
                                 </div>
                                 
-                                <div className="lg:col-span-1">
-                                    <label className="block text-[10px] uppercase font-bold text-emerald-600 mb-1.5 ml-1">Zone 2 : Code de déverrouillage</label>
+                                <div>
+                                    <label className="block text-[10px] uppercase font-black text-slate-500 mb-2">Zone 2 : Code</label>
                                     <div className="relative">
                                         <input 
                                             type="text" 
                                             value={newLicenseCode}
-                                            onChange={(e) => setNewLicenseCode(e.target.value)}
-                                            className="w-full h-[42px] pl-3 pr-10 bg-emerald-50 border border-emerald-200 rounded-lg uppercase font-mono text-sm text-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                                            placeholder="CODE-AUTO"
+                                            onChange={(e) => setNewLicenseCode(e.target.value.toUpperCase())}
+                                            className="w-full h-10 pl-3 pr-8 bg-white border border-slate-200 rounded-lg uppercase font-mono text-xs font-bold text-slate-700 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                            placeholder="GÉNÉRÉ"
                                         />
-                                        <button 
-                                            onClick={generateRandomCode}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"
-                                            title="Régénérer un code"
-                                        >
-                                            <RefreshIcon className="h-4 w-4" />
+                                        <button onClick={generateRandomCode} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-500" title="Régénérer">
+                                            <RefreshIcon className="h-3 w-3" />
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <div className="lg:col-span-1">
-                                    <label className="block text-[10px] uppercase font-bold text-amber-600 mb-1.5 ml-1">Zone 3 : Durée</label>
+                                <div>
+                                    <label className="block text-[10px] uppercase font-black text-slate-500 mb-2">Zone 3 : Durée</label>
                                     <select 
                                         value={newLicenseDuration} 
                                         onChange={e => setNewLicenseDuration(e.target.value as License['duration'])}
-                                        className="w-full h-[42px] px-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all appearance-none cursor-pointer"
+                                        className="w-full h-10 px-2 bg-white border border-slate-200 rounded-lg text-xs cursor-pointer outline-none font-medium text-slate-700"
                                     >
-                                        <option value="6m">6 Mois</option>
-                                        <option value="9m">9 Mois</option>
-                                        <option value="1y">1 An</option>
-                                        <option value="2y">2 Ans</option>
+                                        <option value="6m">6 mois</option>
+                                        <option value="9m">9 mois</option>
+                                        <option value="1y">1 an</option>
+                                        <option value="2y">2 ans</option>
                                         <option value="unlimited">Illimitée</option>
                                     </select>
                                 </div>
                                 
-                                <div className="lg:col-span-1">
-                                    <label className="block text-[10px] uppercase font-bold text-purple-600 mb-1.5 ml-1">Zone 4 : Expiration</label>
-                                    <div className="h-[42px] flex items-center px-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-400 italic font-medium">
-                                        Calculée à l'activation
+                                <div>
+                                    <label className="block text-[10px] uppercase font-black text-slate-500 mb-2">Zone 4 : Expiration</label>
+                                    <div className="h-10 flex items-center px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-400 italic">
+                                        Auto-calculé
                                     </div>
                                 </div>
                                 
-                                <div className="lg:col-span-1 flex items-end">
-                                    <Button 
-                                        onClick={addLicense} 
-                                        variant="primary" 
-                                        className="w-full h-[42px] shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-                                        icon={<PlusIcon className="h-4 w-4" />}
-                                    >
-                                        Ajouter
-                                    </Button>
-                                </div>
+                                <Button onClick={addLicense} variant="primary" className="h-10 text-xs flex items-center justify-center gap-1 shadow-sm font-black uppercase bg-emerald-600 hover:bg-emerald-700 border-none">
+                                    <PlusIcon className="h-4 w-4" />
+                                    AJOUTER
+                                </Button>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {currentUserLevel === 0 && (
+            {(currentUserLevel === 0 || currentUserLevel === 1) && (
                 <div className="bg-[var(--color-bg-card)] p-6 rounded-lg [box-shadow:var(--shadow-md)]">
-                    <h3 className="text-xl font-bold text-[var(--color-text-heading)] mb-4 border-b border-[var(--color-border-base)] pb-2">Liste des Licences et Appareils</h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-[var(--color-border-base)]">
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Appareil (IP/ID)</th>
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Code d'Activation</th>
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Durée</th>
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Statut</th>
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Expiration</th>
-                                    <th className="py-3 px-4 text-sm font-semibold text-[var(--color-text-muted)]">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {licenses.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="py-8 text-center text-[var(--color-text-muted)] italic">Aucune licence générée pour le moment.</td>
-                                    </tr>
-                                ) : (
-                                    licenses.map((license: License) => (
-                                        <tr key={license.id} className="border-b border-[var(--color-border-base)] hover:bg-[var(--color-bg-muted)] transition-colors">
-                                            <td className="py-3 px-4 font-mono text-sm">{license.deviceIp}</td>
-                                            <td className="py-3 px-4">
-                                                <input 
-                                                    type="text" 
-                                                    value={license.code}
-                                                    onChange={(e) => updateLicenseCode(license.id, e.target.value)}
-                                                    className="font-bold text-[var(--color-primary)] bg-transparent border-none focus:ring-0 p-0 w-full uppercase font-mono"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <select 
-                                                    value={license.duration}
-                                                    onChange={(e) => updateLicenseDuration(license.id, e.target.value)}
-                                                    className="text-xs p-1 border rounded bg-transparent"
-                                                >
-                                                    <option value="6m">6 Mois</option>
-                                                    <option value="9m">9 Mois</option>
-                                                    <option value="1y">1 An</option>
-                                                    <option value="2y">2 Ans</option>
-                                                    <option value="unlimited">Illimitée</option>
-                                                </select>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                                                    license.status === 'activated' ? 'bg-green-100 text-green-700' : 
-                                                    license.status === 'expired' ? 'bg-red-100 text-red-700' : 
-                                                    'bg-yellow-100 text-yellow-700'
-                                                }`}>
-                                                    {license.status === 'activated' ? 'Activé' : license.status === 'expired' ? 'Expiré' : 'En attente'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-sm">
-                                                {license.expiryDate ? new Date(license.expiryDate).toLocaleDateString('fr-FR') : (license.duration === 'unlimited' ? 'Jamais' : '-')}
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <button onClick={() => handleDeleteLicense(license.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors">
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                    <h3 className="text-xl font-bold text-[var(--color-text-heading)] mb-6 border-b border-[var(--color-border-base)] pb-2 flex items-center gap-2">
+                        <ClipboardListIcon className="h-6 w-6 text-[var(--color-primary)]" />
+                        Codes Générés (Liste des Licences)
+                    </h3>
+                    
+                    <div className="space-y-3">
+                        {/* Desktop Header */}
+                        <div className="hidden lg:grid grid-cols-5 gap-3 px-4 text-[10px] uppercase font-black text-slate-500">
+                            <div>Zone 1 : Appareil</div>
+                            <div>Zone 2 : Code Activer</div>
+                            <div>Zone 3 : Durée Choisie</div>
+                            <div>Zone 4 : Date Fin</div>
+                            <div className="text-center text-red-500">Supprimer</div>
+                        </div>
+
+                        {licenses.length === 0 ? (
+                            <div className="py-10 text-center text-slate-400 italic bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                                Aucune licence pour le moment.
+                            </div>
+                        ) : (
+                            licenses.map((l: License) => (
+                                <div key={l.id} className="grid grid-cols-1 lg:grid-cols-5 gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:border-emerald-200 transition-colors">
+                                    {/* Zone 1: IP */}
+                                    <div className="flex flex-col lg:block">
+                                        <span className="lg:hidden text-[10px] font-bold text-slate-400 mb-1 uppercase">Zone 1 : Appareil</span>
+                                        <div className={`p-2 rounded font-mono text-[11px] truncate ${l.status === 'activated' ? 'bg-green-50 text-green-700 font-bold border border-green-100' : 'bg-slate-50 text-slate-400 italic border border-slate-200'}`}>
+                                            {l.deviceIp}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Zone 2: Code */}
+                                    <div className="flex flex-col lg:block">
+                                        <span className="lg:hidden text-[10px] font-bold text-slate-400 mb-1">ZONE 2 : CODE</span>
+                                        <div className="relative">
+                                            <input 
+                                                type="text" 
+                                                value={l.code}
+                                                onChange={(e) => updateLicenseCode(l.id, e.target.value)}
+                                                className="w-full p-2 bg-white border border-slate-300 rounded text-[11px] font-mono uppercase focus:ring-1 focus:ring-[var(--color-primary)] outline-none"
+                                            />
+                                            <EditIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    {/* Zone 3: Duration */}
+                                    <div className="flex flex-col lg:block">
+                                        <span className="lg:hidden text-[10px] font-bold text-slate-400 mb-1">ZONE 3 : DURÉE</span>
+                                        <select 
+                                            value={l.duration} 
+                                            onChange={e => updateLicenseDuration(l.id, e.target.value as License['duration'])}
+                                            className="w-full p-2 bg-white border border-slate-300 rounded text-[11px] outline-none cursor-pointer"
+                                        >
+                                            <option value="6m">6 mois</option>
+                                            <option value="9m">9 mois</option>
+                                            <option value="1y">1 an</option>
+                                            <option value="2y">2 ans</option>
+                                            <option value="unlimited">Illimitée</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Zone 4: Expiration */}
+                                    <div className="flex flex-col lg:block">
+                                        <span className="lg:hidden text-[10px] font-bold text-slate-400 mb-1 uppercase">Zone 4 : Date Fin</span>
+                                        <div className="p-2 bg-slate-50 border border-slate-200 rounded text-[11px] text-slate-600">
+                                            {l.status === 'activated' 
+                                                ? (l.expiryDate ? new Date(l.expiryDate).toLocaleDateString('fr-FR') : 'Illimitée') 
+                                                : <span className="text-slate-400 italic">Non activé</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Delete action */}
+                                    <div className="flex justify-center">
+                                        <button 
+                                            onClick={() => handleDeleteLicense(l.id)}
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                            title="Supprimer la licence"
+                                        >
+                                            <TrashIcon className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}
