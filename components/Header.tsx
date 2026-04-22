@@ -17,8 +17,6 @@ interface HeaderProps {
     onNavigateToCalendar: () => void;
     onNavigateToResteJours: () => void;
     onNavigateToResteDenrees: () => void;
-    activationStatus: 'trial' | 'activated' | 'expired' | 'unlimited';
-    daysRemaining: number | null;
 }
 
 const formatMonth = (monthKey: string) => {
@@ -30,7 +28,7 @@ const formatMonth = (monthKey: string) => {
 };
 
 
-export const Header: React.FC<HeaderProps> = ({ title, subMenus, activeSubMenu, onSubMenuClick, activeMainMenu, currentUserLevel, onToggleSidebar, onToggleMobileSidebar, isMobileView, onNavigateToCalendar, onNavigateToResteJours, onNavigateToResteDenrees, activationStatus, daysRemaining }) => {
+export const Header: React.FC<HeaderProps> = ({ title, subMenus, activeSubMenu, onSubMenuClick, activeMainMenu, currentUserLevel, onToggleSidebar, onToggleMobileSidebar, isMobileView, onNavigateToCalendar, onNavigateToResteJours, onNavigateToResteDenrees }) => {
     const {
         schools,
         globalSchoolId, setGlobalSchoolId,
@@ -52,38 +50,6 @@ export const Header: React.FC<HeaderProps> = ({ title, subMenus, activeSubMenu, 
 
     const showGlobalFilters = activeMainMenu !== MainMenuId.Dashboard && activeMainMenu !== MainMenuId.Informations;
 
-    const LicenseStatusIndicator: React.FC = () => {
-        let message = '';
-        let colorClass = '';
-
-        switch (activationStatus) {
-            case 'trial':
-                message = `Essai : ${daysRemaining} j`;
-                colorClass = 'bg-yellow-100 text-yellow-800';
-                break;
-            case 'activated':
-                message = `Activé : ${daysRemaining} j`;
-                colorClass = 'bg-green-100 text-green-800';
-                break;
-            case 'unlimited':
-                message = 'Licence illimitée';
-                colorClass = 'bg-green-100 text-green-800';
-                break;
-            case 'expired':
-                message = 'Licence expirée';
-                colorClass = 'bg-red-100 text-red-800';
-                break;
-            default:
-                return null;
-        }
-
-        return (
-            <div className={`px-2 py-1.5 rounded-full text-xs font-semibold ${colorClass}`}>
-                {message}
-            </div>
-        );
-    };
-    
     return (
         <header className="bg-[var(--color-bg-header)] backdrop-blur-sm [box-shadow:var(--shadow-sm)] z-10 sticky top-0">
             <div className="min-h-16 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 border-b border-[var(--color-border-base)]">
@@ -155,7 +121,6 @@ export const Header: React.FC<HeaderProps> = ({ title, subMenus, activeSubMenu, 
                     >
                         <PackageIcon className="h-5 w-5" />
                     </button>
-                    <LicenseStatusIndicator />
                     {currentUserLevel !== null && (
                         <div className="hidden sm:flex items-center gap-2 bg-[var(--color-primary-light)] text-[var(--color-primary-dark)] px-3 py-1.5 rounded-full text-sm font-semibold">
                             <LockIcon className="h-4 w-4" />

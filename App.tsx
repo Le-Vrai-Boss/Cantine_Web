@@ -25,7 +25,6 @@ import { useAppContext } from './context/AppContext';
 import { ToastContainer } from './components/Toast';
 import { LockScreen } from './components/LockScreen';
 import { ForcedPasswordChangeScreen } from './components/ForcedPasswordChangeScreen';
-import { DeactivatedScreen } from './components/DeactivatedScreen';
 import { useToast } from './context/ToastContext';
 import { SplashScreen } from './components/SplashScreen';
 import { ApprovalScreen } from './components/ApprovalScreen';
@@ -59,8 +58,6 @@ const App: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [returnTo, setReturnTo] = useState<{ mainMenu: MainMenuId; subMenu: SubMenuId | null } | null>(null);
     const collapseTimeout = useRef<number | null>(null);
-    const [activationStatus, setActivationStatus] = useState<'trial' | 'activated' | 'expired' | 'unlimited'>('trial');
-    const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -150,58 +147,6 @@ const App: React.FC = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    useEffect(() => {
-        const checkActivation = () => {
-            const { firstLaunchDate, activationStatus: savedStatus, expiryDate } = appSettings;
-            const now = new Date().getTime();
-
-            if (savedStatus === 'unlimited') {
-                setActivationStatus('unlimited');
-                setDaysRemaining(null);
-                return;
-            }
-
-            if (savedStatus === 'activated' && expiryDate) {
-                const expiry = new Date(expiryDate).getTime();
-                if (now > expiry) {
-                    setActivationStatus('expired');
-                    setDaysRemaining(0);
-                } else {
-                    setActivationStatus('activated');
-                    const remaining = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-                    setDaysRemaining(remaining);
-                }
-                return;
-            }
-
-            // Default to trial
-            if (firstLaunchDate) {
-                const trialEndDate = new Date(firstLaunchDate);
-                trialEndDate.setDate(trialEndDate.getDate() + 7);
-                const trialEndTimestamp = trialEndDate.getTime();
-
-                if (now > trialEndTimestamp) {
-                    setActivationStatus('expired');
-                    setDaysRemaining(0);
-                } else {
-                    setActivationStatus('trial');
-                    const remaining = Math.ceil((trialEndTimestamp - now) / (1000 * 60 * 60 * 24));
-                    setDaysRemaining(remaining);
-                }
-            } else {
-                // Fallback if firstLaunchDate isn't set yet
-                setActivationStatus('trial');
-                setDaysRemaining(7);
-            }
-        };
-        
-        if (!isLoading) {
-            checkActivation();
-            // Check every hour
-            const interval = setInterval(checkActivation, 1000 * 60 * 60); 
-            return () => clearInterval(interval);
-        }
-    }, [isLoading, appSettings]);
 
     const visibleNavItems = useMemo(() => {
         let filteredNavItems = [...navItems];
@@ -410,22 +355,6 @@ const App: React.FC = () => {
         return <ForcedPasswordChangeScreen onPasswordChanged={handlePasswordChanged} />;
     }
 
-    if (activationStatus === 'expired') {
-        return <DeactivatedScreen 
-            onActivateClick={() => {
-                setActiveMainMenu(MainMenuId.Parametres);
-                setActiveSubMenu(null);
-                setActivationStatus('trial'); 
-            }}
-            onDesignerUnlock={() => {
-                handleUnlock(0);
-                setActivationStatus('trial'); // Temporarily re-enable to allow access
-                setActiveMainMenu(MainMenuId.Parametres);
-                setActiveSubMenu(null);
-            }}
-        />;
-    }
-
     return (
         <div className="flex h-screen bg-[var(--color-bg-base)] font-sans text-[var(--color-text-base)]">
             {isMobileView && isMobileSidebarOpen && (
@@ -461,8 +390,6 @@ const App: React.FC = () => {
                     onNavigateToCalendar={handleNavigateToCalendar}
                     onNavigateToResteJours={handleNavigateToResteJours}
                     onNavigateToResteDenrees={handleNavigateToResteDenrees}
-                    activationStatus={activationStatus}
-                    daysRemaining={daysRemaining}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[var(--color-bg-base)] p-4 lg:p-6">
                     {renderPage()}

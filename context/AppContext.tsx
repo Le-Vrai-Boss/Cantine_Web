@@ -58,7 +58,6 @@ const getDefaultSettings = (): AppSettings => ({
     level4Password: '',
     firstLaunchDate: new Date().toISOString(),
     isApproved: false,
-    activationStatus: 'trial',
 });
 
 const initialMessageTemplates: MessageTemplate[] = [
@@ -119,7 +118,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [messageTemplates, setMessageTemplates] = useState<MessageTemplate[]>(initialMessageTemplates);
     const [messageHistory, setMessageHistory] = useState<MessageHistoryEntry[]>([]);
-    const [licenses, setLicenses] = useState<License[]>([]);
     const [globalSchoolId, setGlobalSchoolId] = useState<string>('all');
     const [globalMonth, setGlobalMonth] = useState<string>('');
     
@@ -237,7 +235,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         suivisMedicaux, formationsHygiene, inspectionsLocaux, incidentsSante,
         fournisseurs, commandes, evaluationsFournisseurs, donateurs, dons, letterTemplates,
         firstPreparationDateDons, foodItemsDons, schoolPreparationDaysDons, schoolFoodSuppliesDons, verificationDataDons,
-        menus, weeklyPlannings, planActionData, rapportMensuelData, history, messageTemplates, messageHistory, licenses, globalSchoolId, globalMonth
+        menus, weeklyPlannings, planActionData, rapportMensuelData, history, messageTemplates, messageHistory, globalSchoolId, globalMonth
     };
     
     useEffect(() => {
@@ -260,7 +258,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         suivisMedicaux, formationsHygiene, inspectionsLocaux, incidentsSante,
         fournisseurs, commandes, evaluationsFournisseurs, donateurs, dons, letterTemplates,
         firstPreparationDateDons, foodItemsDons, schoolPreparationDaysDons, schoolFoodSuppliesDons, verificationDataDons,
-        menus, weeklyPlannings, planActionData, rapportMensuelData, history, messageTemplates, messageHistory, licenses, globalSchoolId, globalMonth,
+        menus, weeklyPlannings, planActionData, rapportMensuelData, history, messageTemplates, messageHistory, globalSchoolId, globalMonth,
         isLoading
     ]);
 
@@ -308,7 +306,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 [setRapportMensuelData as React.Dispatch<React.SetStateAction<never>>, data.rapportMensuelData, {}], [setHistory as React.Dispatch<React.SetStateAction<never>>, data.history, []], 
                 [setMessageTemplates as React.Dispatch<React.SetStateAction<never>>, data.messageTemplates, initialMessageTemplates], 
                 [setMessageHistory as React.Dispatch<React.SetStateAction<never>>, data.messageHistory, []], 
-                [setLicenses as React.Dispatch<React.SetStateAction<never>>, data.licenses, []],
                 [setGlobalSchoolId as React.Dispatch<React.SetStateAction<never>>, data.globalSchoolId, 'all'],
                 [setGlobalMonth as React.Dispatch<React.SetStateAction<never>>, data.globalMonth, '']
             ];
@@ -351,7 +348,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         history, setHistory, logAction,
         messageTemplates, setMessageTemplates,
         messageHistory, setMessageHistory,
-        licenses, setLicenses,
         globalSchoolId, setGlobalSchoolId,
         globalMonth, setGlobalMonth,
         restoreAllData,

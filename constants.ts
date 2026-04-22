@@ -86,7 +86,6 @@ export enum SubMenuId {
     ParametresApparence = 'parametres-apparence',
     ParametresModules = 'parametres-modules',
     ParametresSecurite = 'parametres-securite',
-    ParametresLicence = 'parametres-licence',
     ParametresDonnees = 'parametres-donnees',
     ParametresDanger = 'parametres-danger',
 }
@@ -256,7 +255,6 @@ export const navItems: NavItem[] = [
             { id: SubMenuId.ParametresApparence, label: 'Apparence' },
             { id: SubMenuId.ParametresModules, label: 'Modules & Alertes' },
             { id: SubMenuId.ParametresSecurite, label: 'Sécurité' },
-            { id: SubMenuId.ParametresLicence, label: 'Licence & Activation' },
             { id: SubMenuId.ParametresDonnees, label: 'Données (Sauvegarde)' },
             { id: SubMenuId.ParametresDanger, label: 'Zone de Danger' },
         ],

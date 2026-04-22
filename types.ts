@@ -16,15 +16,6 @@ export interface NavItem {
     subMenus?: SubMenuItem[];
 }
 
-export interface License {
-    id: string;
-    code: string;
-    deviceIp: string;
-    duration: '6m' | '9m' | '1y' | '2y' | 'unlimited';
-    activationDate?: string;
-    expiryDate?: string;
-    status: 'pending' | 'activated' | 'expired';
-}
 
 export interface AppSettings {
     organizationName: string;
@@ -43,11 +34,6 @@ export interface AppSettings {
     level4Password?: string;
     firstLaunchDate?: string;
     isApproved?: boolean;
-    activationStatus: 'trial' | 'activated' | 'expired' | 'unlimited';
-    activationDate?: string;
-    validityPeriod?: '6m' | '9m' | '1y' | '2y';
-    expiryDate?: string;
-    licenses?: License[];
 }
 
 export interface School {
@@ -631,10 +617,6 @@ export interface AppContextType {
     setMessageTemplates: React.Dispatch<React.SetStateAction<MessageTemplate[]>>;
     messageHistory: MessageHistoryEntry[];
     setMessageHistory: React.Dispatch<React.SetStateAction<MessageHistoryEntry[]>>;
-
-    // Licences
-    licenses: License[];
-    setLicenses: React.Dispatch<React.SetStateAction<License[]>>;
 
     // Global Filters
     globalSchoolId: string;
